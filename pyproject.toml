@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "apache-flink==2.2.0",
+    "dbt-duckdb>=1.10.1",
     "faker>=40.11.1",
     "jupyter>=1.1.1",
     "kafka-python>=2.3.0",

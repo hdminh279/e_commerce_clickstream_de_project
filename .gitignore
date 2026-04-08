@@ -15,3 +15,14 @@ plugins/
 .ipynb_checkpoints/
 .env
 .terraform/
+
+# dbt
+ecommerce_dbt/logs/
+ecommerce_dbt/analyses/
+ecommerce_dbt/target/
+ecommerce_dbt/dbt_packages/
+ecommerce_data.duckdb
+*.duckdb
+*.duckdb.wal
+
+.DS_Store

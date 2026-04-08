@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: s3_datalake
+    description: "Raw data from S3"
+    tables:
+      - name: raw_clickstream
+        meta:
+          external_location: "read_parquet('s3://e-commerce-clickstream-data-lake/raw/event_date=*/*', hive_partitioning=true)"
+        
+      - name: raw_total_revenue
+        meta:
+          external_location: "read_parquet('s3://e-commerce-clickstream-data-lake/raw/total_revenue/*/*', hive_partitioning=true)"

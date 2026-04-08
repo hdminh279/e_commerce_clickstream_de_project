@@ -26,7 +26,7 @@ def create_events_source_kafka(t_env):
             quantity INTEGER,
             transaction_id VARCHAR,
             ts AS TO_TIMESTAMP_LTZ(event_timestamp, 3),
-            WATERMARK FOR ts AS ts - INTERVAL '5' SECOND
+            WATERMARK FOR ts AS ts - INTERVAL '20' SECOND
         )
             WITH(
             'connector' = 'kafka',
@@ -78,6 +78,30 @@ def create_s3_parquet_sink(t_env):
 
     return sink_table
 
+def create_s3_revenue_sink(t_env):
+    sink_revenue = "s3_revenue"
+    source_dll = f"""
+        CREATE TABLE {sink_revenue}(
+            window_start TIMESTAMP(3),
+            window_end TIMESTAMP(3),
+            user_id VARCHAR,
+            total_revenue FLOAT,
+            event_date VARCHAR
+        ) PARTITIONED BY (event_date)
+        WITH(
+            'connector' = 'filesystem',
+            'path' = 's3a://{TARGET_BUCKET}/raw/total_revenue',
+            'format' = 'parquet',
+            'sink.rolling-policy.rollover-interval' = '1 min',
+            'sink.rolling-policy.check-interval' = '1 min',
+            'sink.rolling-policy.file-size' = '128MB'
+        )
+
+    """
+    t_env.execute_sql(source_dll)
+
+    return sink_revenue
+
 def log_upload_s3():
     env = StreamExecutionEnvironment.get_execution_environment()
     env.enable_checkpointing(10 * 1000)
@@ -88,17 +112,29 @@ def log_upload_s3():
 
     source_table = create_events_source_kafka(t_env)
     sink_table = create_s3_parquet_sink(t_env)
+    sink_revenue = create_s3_revenue_sink(t_env)
 
     t_env.execute_sql(f"""
-            INSERT INTO {sink_table}
-            SELECT
-                session_id, client_id, user_id, ip_address, device_category, 
-                os_browser, utm_source, cart_total, event_id, event_timestamp, 
-                event_name, page_url, product_id, category, price, quantity, 
-                transaction_id, 
-                ts,
-                DATE_FORMAT(ts, 'yyyy-MM-dd') AS event_date
-            FROM {source_table}
+            EXECUTE STATEMENT SET
+            BEGIN
+                INSERT INTO {sink_table}
+                SELECT
+                    session_id, client_id, user_id, ip_address, device_category, 
+                    os_browser, utm_source, cart_total, event_id, event_timestamp, 
+                    event_name, page_url, product_id, category, price, quantity, 
+                    transaction_id, 
+                    ts,
+                    DATE_FORMAT(ts, 'yyyy-MM-dd') AS event_date
+                FROM {source_table};
+                INSERT INTO {sink_revenue}
+                SELECT
+                    window_start, window_end, user_id, SUM(cart_total) AS total_revenue, DATE_FORMAT(window_start, 'yyyy-MM-dd') AS event_date
+                FROM TABLE (
+                    TUMBLE(TABLE {source_table}, DESCRIPTOR(ts), INTERVAL '1' MINUTE)
+                )
+                WHERE event_name = 'purchase'
+                GROUP BY window_start, window_end, user_id;
+            END;
     """).wait()
 
 

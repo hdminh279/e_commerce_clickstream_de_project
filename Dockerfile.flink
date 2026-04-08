@@ -13,15 +13,16 @@ ENV PATH="/opt/pyflink/.venv/bin:$PATH"
 WORKDIR /opt/flink/lib
 
 # Đã bỏ dòng wget s3-fs-hadoop ở đây đi vì để ở thư mục lib sẽ gây xung đột!
-RUN wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-json/2.2.0/flink-json-2.2.0.jar; \
-    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-kafka/4.0.0-2.2/flink-sql-connector-kafka-4.0.0-2.2.jar; \
-    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/4.0.0-2.0/flink-connector-jdbc-core-4.0.0-2.0.jar; \
-    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-postgres/4.0.0-2.0/flink-connector-jdbc-postgres-4.0.0-2.0.jar; \
-    wget https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.10/postgresql-42.7.10.jar; \
-    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-parquet/2.2.0/flink-parquet-2.2.0.jar; \
-    wget https://repo1.maven.org/maven2/org/apache/parquet/parquet-hadoop-bundle/1.12.2/parquet-hadoop-bundle-1.12.2.jar
+RUN wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-json/2.2.0/flink-json-2.2.0.jar && \
+    wget https://repo1.maven.org/maven2/org/apache/flink/flink-sql-connector-kafka/4.0.1-2.0/flink-sql-connector-kafka-4.0.1-2.0.jar && \
+    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/4.0.0-2.0/flink-connector-jdbc-core-4.0.0-2.0.jar && \
+    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-postgres/4.0.0-2.0/flink-connector-jdbc-postgres-4.0.0-2.0.jar && \
+    wget https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.10/postgresql-42.7.10.jar && \
+    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-parquet/2.2.0/flink-parquet-2.2.0.jar && \
+    wget https://repo1.maven.org/maven2/org/apache/parquet/parquet-hadoop-bundle/1.12.2/parquet-hadoop-bundle-1.12.2.jar && \
+    wget https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar
 
-# BƯỚC CHỐT HẠ: Copy plugin S3 có sẵn của Flink vào đúng thư mục plugins
+# BƯỚC NÀY ĐỂ KÍCH HOẠT S3 (Bắt buộc phải có nha Minh):
 RUN mkdir -p /opt/flink/plugins/s3-fs-hadoop && \
     cp /opt/flink/opt/flink-s3-fs-hadoop-2.2.0.jar /opt/flink/plugins/s3-fs-hadoop/
 
