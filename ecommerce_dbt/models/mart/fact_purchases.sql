@@ -1,7 +1,14 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    unique_key = 'transaction_id'
+) }}
 
 WITH fact_purchases AS (
     SELECT * FROM {{ ref('stg_clickstream') }}
+    WHERE 1=1
+    {% if is_incremental() %}
+        AND event_time > (SELECT MAX(event_time) FROM {{ this }})
+    {% endif %}
 )
 
 SELECT
