@@ -21,7 +21,7 @@ ecommerce_dbt/logs/
 ecommerce_dbt/analyses/
 ecommerce_dbt/target/
 ecommerce_dbt/dbt_packages/
-ecommerce_dbt/test/
+ecommerce_dbt/tests/
 ecommerce_data.duckdb
 *.duckdb
 *.duckdb.wal
