@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: fact_purchases
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+
+      - name: transaction_id
+        tests:
+          - not_null
+      
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_id
+              severity: error

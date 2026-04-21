@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "apache-airflow==2.9.0",
     "apache-flink==2.2.0",
     "dbt-duckdb>=1.10.1",
     "faker>=40.11.1",

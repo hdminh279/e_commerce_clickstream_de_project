@@ -1,0 +1,20 @@
+version: 2
+
+snapshots:
+
+  - name: dim_products
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: dim_user
+    columns:
+      - name: client_id
+        tests:
+          - not_null

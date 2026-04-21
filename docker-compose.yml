@@ -1,3 +1,26 @@
+x-airflow-common:
+  &airflow-common
+  build: .
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://postgres:postgres@postgres/postgres
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+    TARGET_S3_BUCKET: ${TARGET_S3_BUCKET}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./ecommerce_dbt:/opt/airflow/ecommerce_dbt
+  user: "${AIRFLOW_UID:-50000}:0"
+
+  env_file:
+    - .env
+
+
 services:
   redpanda:
     image: redpandadata/redpanda:v25.3.9
@@ -94,6 +117,51 @@ services:
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
+  
+  airflow-init:
+    <<: *airflow-common
+    command: version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: airflow
+      _AIRFLOW_WWW_USER_PASSWORD: airflow
+    depends_on:
+      - postgres
 
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    restart: always
+
+  metabase:
+    build:
+      context: .
+      dockerfile: Dockerfile.metabase
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./metabase-data:/metabase-data 
+      - ./metabase-plugins:/plugins
+      - ./ecommerce_dbt:/ecommerce_dbt
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+      MB_PLUGINS_DIR: /plugins
+    restart: always
 volumes:
   postgres-db-volume:

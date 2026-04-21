@@ -1,3 +1,5 @@
+{{ config(materialized='view') }}
+
 WITH raw_total_revenue AS (
     SELECT * FROM {{ source ('s3_datalake', 'raw_total_revenue')}}
 )

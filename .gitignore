@@ -5,10 +5,10 @@ build/
 dist/
 wheels/
 *.egg-info
-metabase-data/
+.ipynb_checkpoints/
 
 # Virtual environments
-.venv
+.venv/
 
 logs/
 plugins/
@@ -21,8 +21,23 @@ ecommerce_dbt/logs/
 ecommerce_dbt/analyses/
 ecommerce_dbt/target/
 ecommerce_dbt/dbt_packages/
+ecommerce_dbt/test/
 ecommerce_data.duckdb
 *.duckdb
 *.duckdb.wal
-
+.user.yml
 .DS_Store
+
+# Terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+
+# Airflow
+logs/
+plugins/
+
+
+# metabase
+metabase-plugins
+metabase-data/

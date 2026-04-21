@@ -1,5 +1,14 @@
+{{ config(materialized='view') }}
+
 WITH raw_clickstream AS (
     SELECT * FROM {{ source ('s3_datalake', 'raw_clickstream')}}
+),
+
+ranked_clickstream AS (
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY ts DESC) as rn
+    FROM raw_clickstream
 )
 
 SELECT 
@@ -27,7 +36,8 @@ SELECT
     cart_total,
     NULLIF(transaction_id, '') AS transaction_id,
     event_date 
-FROM raw_clickstream
+FROM ranked_clickstream
 WHERE
     session_id IS NOT NULL
+    AND rn = 1
     

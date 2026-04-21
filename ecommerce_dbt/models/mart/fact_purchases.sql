@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental',
-    unique_key = 'transaction_id'
+    unique_key = 'event_id'
 ) }}
 
 WITH fact_purchases AS (
@@ -13,6 +13,7 @@ WITH fact_purchases AS (
 
 SELECT
     session_id,
+    event_id,
     user_id,
     transaction_id,
     product_id,

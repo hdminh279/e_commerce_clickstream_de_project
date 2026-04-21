@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_clickstream
+    description: "Data clickstream from datalake"
+    columns:
+      - name: session_id
+        description: "session id of one person"
+        tests:
+          - not_null: 
+              severity: error
+
+      - name: event_time
+        tests:
+          - not_null
+
+      - name: client_id
+        tests:
+          - not_null:
+              severity: warn
+
+      - name: event_id
+        tests:
+          - not_null:
+              severity: error
+          - unique:
+              severity: error
+
+  - name: stg_total_revenue
+    description: "Data total revenue from datalake"
+    columns:
+      - name: event_date
+        tests:
+          - not_null
