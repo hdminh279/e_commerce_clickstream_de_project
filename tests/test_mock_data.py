@@ -12,7 +12,7 @@ import sys
 from unittest.mock import patch
 sys.path.insert(0, 'scripts')
 
-from mock_data import UserSession, EventClick, Product
+from mock_data import UserSession
 
 
 def test_initial_state():
