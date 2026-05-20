@@ -5,7 +5,7 @@
 
 WITH fact_purchases AS (
     SELECT * FROM {{ ref('stg_clickstream') }}
-    WHERE 1=1
+    WHERE 1 = 1
     {% if is_incremental() %}
         AND event_time > (SELECT MAX(event_time) FROM {{ this }})
     {% endif %}

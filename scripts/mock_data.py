@@ -81,7 +81,7 @@ class UserSession:
             if self.current_state == "add_to_cart":
                 self.cart_total += self.current_product["price"] * qty
 
-            # Create transaction is
+            # Create transaction id
             txn_id = f"TXN-{fake.random_int(100000, 999999)}" if self.current_state == "purchase" else None
 
             product_obj = Product(

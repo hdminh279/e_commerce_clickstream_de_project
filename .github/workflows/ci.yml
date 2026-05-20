@@ -1,0 +1,73 @@
+name: E-commerce CI Pipeline
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-validate:
+    runs-on: ubuntu-latest
+    environment: E-commerce
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "ap-southeast-1"
+      TARGET_S3_BUCKET: ${{ secrets.TARGET_S3_BUCKET }}
+      S3_ATHENA_RESULT: ${{ secrets.S3_ATHENA_RESULT }}
+      S3_BUCKET_FINAL_RESULT: ${{ secrets.S3_BUCKET_FINAL_RESULT }}
+      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_region: "ap-southeast-1"
+
+    steps:
+      - name: Check repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+        
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run Ruff (Python lint)
+        run: uv run ruff check .
+
+      - name: Run SqlFluff (SQL Lint)
+        run: uv run sqlfluff lint ecommerce_dbt/models --dialect duckdb
+
+      - name: Test Docker Compose Build
+        run: docker compose build
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init & Validate
+        working-directory: ./infra
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Check dbt syntax & compile
+        working-directory: ./ecommerce_dbt
+        run: |
+          uv run dbt deps
+          uv run dbt parse
+          uv run dbt compile
+
+      - name: Run mock_data Unit Test
+        run: uv run pytest tests/test_mock_data.py
+

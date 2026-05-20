@@ -15,4 +15,8 @@ dependencies = [
     "pandas<3.0.0",
     "psycopg2-binary>=2.9.11",
     "pyarrow<21.0.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.13",
+    "sqlfluff>=4.2.1",
+    "sqlfluff-templater-dbt>=4.2.1",
 ]

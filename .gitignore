@@ -41,3 +41,5 @@ plugins/
 # metabase
 metabase-plugins
 metabase-data/
+
+UPDATE_PLAN.md

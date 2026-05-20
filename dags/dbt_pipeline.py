@@ -12,7 +12,7 @@ with DAG(
 
     description="dbt Pipeline",
     start_date = datetime(2026, 4, 20),
-    schedule_interval='*/30 * * * *',
+    schedule='*/30 * * * *',
     catchup=False,
 ) as dag:
     

@@ -1,0 +1,14 @@
+[sqlfluff]
+
+dialect = duckdb
+templater = dbt
+max_line_length = 120
+
+exclude_rules = L034, L031
+
+[sqlfluff:templater:dbt]
+
+project_dir = ecommerce_dbt
+profiles_dir = ecommerce_dbt
+profile = ecommerce_dbt
+target = dev

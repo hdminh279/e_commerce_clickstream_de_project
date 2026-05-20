@@ -6,7 +6,7 @@ TARGET_BUCKET = os.getenv("TARGET_S3_BUCKET")
 
 def create_events_source_kafka(t_env):
     table_name = "clickstream_raw"
-    source_dll = f"""
+    source_ddl = f"""
         CREATE TABLE {table_name}(
             session_id VARCHAR,
             client_id VARCHAR,
@@ -38,12 +38,12 @@ def create_events_source_kafka(t_env):
             )
         """
     
-    t_env.execute_sql(source_dll)
+    t_env.execute_sql(source_ddl)
     return table_name
 
 def create_s3_parquet_sink(t_env):
     sink_table = "s3_clickstream_parquet"
-    source_dll = f"""
+    source_ddl = f"""
         CREATE TABLE {sink_table}(
             session_id VARCHAR,
             client_id VARCHAR,
@@ -74,13 +74,13 @@ def create_s3_parquet_sink(t_env):
             'sink.rolling-policy.file-size' = '128MB'
             )
         """
-    t_env.execute_sql(source_dll)
+    t_env.execute_sql(source_ddl)
 
     return sink_table
 
 def create_s3_revenue_sink(t_env):
     sink_revenue = "s3_revenue"
-    source_dll = f"""
+    source_ddl = f"""
         CREATE TABLE {sink_revenue}(
             window_start TIMESTAMP(3),
             window_end TIMESTAMP(3),
@@ -98,7 +98,7 @@ def create_s3_revenue_sink(t_env):
         )
 
     """
-    t_env.execute_sql(source_dll)
+    t_env.execute_sql(source_ddl)
 
     return sink_revenue
 
@@ -136,7 +136,6 @@ def log_upload_s3():
                 GROUP BY window_start, window_end, user_id;
             END;
     """).wait()
-
 
 if __name__ == '__main__':
     log_upload_s3()

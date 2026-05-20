@@ -3,15 +3,19 @@ version: 2
 models:
   - name: fact_purchases
     columns:
+      - name: session_id
+        description: Session id of one person
+        tests:
+          - not_null:
+              severity: error
       - name: event_id
         tests:
           - not_null
           - unique
-
+      - name: user_id
       - name: transaction_id
         tests:
           - not_null
-      
       - name: product_id
         tests:
           - not_null
@@ -19,3 +23,48 @@ models:
               to: ref('dim_products')
               field: product_id
               severity: error
+      - name: quantity
+        data_type: int
+        tests:
+          - not_null
+      - name: cart_total
+        data_type: float
+      - name: event_time
+      - name: event_name
+        tests:
+          - not_null
+
+  - name: fact_events
+    columns:
+      - name: session_id
+        description: Session id of one person
+        tests:
+          - not_null:
+              severity: error
+      - name: user_id
+      - name: client_id
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: event_time
+        tests:
+          - not_null
+      - name: event_name
+        tests:
+          - not_null
+
+  - name: mart_conversion_funnel
+    columns:
+      - name: utm_source
+        description: Marketing source of the session
+        tests:
+          - not_null
+      - name: total_sessions
+        description: Total number of distinct sessions
+      - name: sessions_with_views
+        description: Sessions that viewed at least one item
+      - name: sessions_with_cart
+        description: Sessions that added items to cart
+      - name: sessions_with_purchase
+        description: Sessions that completed a purchase
