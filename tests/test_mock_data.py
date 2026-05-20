@@ -44,7 +44,7 @@ def test_cart_total():
 
     total_1 = session.cart_total
 
-    session.is_activate = True
+    session.is_active = True
     session.current_state = "add_to_cart"
     session.get_next_event()
 
