@@ -10,16 +10,16 @@ jobs:
     environment: E-commerce
 
     env:
-      aws_access_key_id: ${{ secrets.aws_access_key_id }}
-      aws_secret_access_key: ${{ secrets.aws_secret_access_key }}
-      aws_default_region: "ap-southeast-1"
-      target_s3_bucket: ${{ secrets.target_s3_bucket }}
-      s3_athena_result: ${{ secrets.s3_athena_result }}
-      s3_bucket_final_result: ${{ secrets.s3_bucket_final_result }}
-      database_name: ${{ secrets.database_name }}
-      tf_var_aws_access_key: ${{ secrets.aws_access_key_id }}
-      tf_var_aws_secret_key: ${{ secrets.aws_secret_access_key }}
-      tf_var_aws_region: "ap-southeast-1"
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "ap-southeast-1"
+      TARGET_S3_BUCKET: ${{ secrets.TARGET_S3_BUCKET }}
+      S3_ATHENA_RESULT: ${{ secrets.S3_ATHENA_RESULT }}
+      S3_BUCKET_FINAL_RESULT: ${{ secrets.S3_BUCKET_FINAL_RESULT }}
+      DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+      TF_VAR_aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_region: "ap-southeast-1"
 
     steps:
       - name: checkout repository
