@@ -46,6 +46,10 @@ jobs:
       - name: Run Ruff (Python lint)
         run: uv run ruff check .
 
+      - name: Install dbt dependencies
+        working-directory: ./ecommerce_dbt
+        run: uv run dbt deps
+
       - name: Run SqlFluff (SQL Lint)
         run: uv run sqlfluff lint ecommerce_dbt/models --dialect duckdb
 
