@@ -105,7 +105,8 @@ def create_s3_revenue_sink(t_env):
 def log_upload_s3():
     env = StreamExecutionEnvironment.get_execution_environment()
     env.enable_checkpointing(10 * 1000)
-    env.set_parallelism(1)
+    flink_parallesim = int(os.environ.get("FLINK_PARALLELISM", 1))
+    env.set_parallelism(flink_parallesim)
 
     settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
     t_env = StreamTableEnvironment.create(env, environment_settings=settings)

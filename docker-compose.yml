@@ -16,9 +16,13 @@ x-airflow-common:
     - ./plugins:/opt/airflow/plugins
     - ./ecommerce_dbt:/opt/airflow/ecommerce_dbt
   user: "${AIRFLOW_UID:-50000}:0"
-
   env_file:
     - .env
+  deploy:
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 1G
 
 
 services:
@@ -51,6 +55,11 @@ services:
       - 9092:9092
       - 28082:28082
       - 29092:29092
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   postgres:
     image: postgres:16
@@ -67,6 +76,11 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
       
   jobmanager:
     build:
@@ -92,6 +106,11 @@ services:
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
 
   taskmanager:
     image: pyflink-workshop
@@ -112,11 +131,16 @@ services:
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: jobmanager
         taskmanager.memory.process.size: 1728m
-        taskmanager.numberOfTaskSlots: 2
-        parallelism.default: 1
+        taskmanager.numberOfTaskSlots: ${FLINK_PARALLELISM}
+        parallelism.default: ${FLINK_PARALLELISM}
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
   
   airflow-init:
     <<: *airflow-common
@@ -163,5 +187,11 @@ services:
       MB_DB_FILE: /metabase-data/metabase.db
       MB_PLUGINS_DIR: /plugins
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1.5G
+
 volumes:
   postgres-db-volume:

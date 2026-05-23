@@ -5,6 +5,12 @@ terraform {
       version = "~>5.0"
     }
   }
+  
+  backend "s3" {
+    bucket = "minh-terraform-state-bucket-2026"
+    key = "prod/clickstream/terraform.tfstate"
+    region = "ap-southeast-1"
+  }
 }
 
 provider "aws" {
