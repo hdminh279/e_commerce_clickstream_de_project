@@ -19,10 +19,41 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
-# Amzon S3 Bucket
+# Amazon S3 Bucket
 resource "aws_s3_bucket" "data_lake" {
   bucket        = "${var.project_name}-data-lake"
   force_destroy = true
+}
+
+# Enable versioning to protect against accidental overwrites/delections adn allow state recovery
+resource "aws_s3_bucket_versioning" "data_lake_versioning" {
+  bucket = aws_s3_bucket.data_lake.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Configure Lifecycle Rules to optimize storage costs by automatically transitioning old data to cheaper storage classes or deleting it.
+resource "aws_s3_bucket_lifecycle_configuration" "data_lake_lifecycle" {
+  bucket = aws_s3_bucket.data_lake.id
+  rule {
+    id = "archive-and-delete-old-data"
+    status = "Enabled"
+
+    filter {}
+
+    transition {
+      days = 30
+      storage_class = "STANDARD_IA"
+    }
+    transition {
+      days = 90
+      storage_class = "GLACIER"
+    }
+    expiration {
+      days = 750
+    }
+  }
 }
 
 # Add bucket athena to save results from athena
