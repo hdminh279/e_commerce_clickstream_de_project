@@ -1,5 +1,5 @@
 ecommerce_dbt:
-  target: dev
+  target:  prod
   outputs:
     
     dev:
@@ -18,8 +18,10 @@ ecommerce_dbt:
     prod:
       type: duckdb
       path: '/opt/airflow/ecommerce_dbt/ecommerce_data.duckdb'
-      threads: 4
+      threads: 1
       connect_retries: 5
+      config:
+        home_directory: '/tmp'
       extensions:
         - httpfs
         - aws

@@ -18,48 +18,78 @@ x-airflow-common:
   user: "${AIRFLOW_UID:-50000}:0"
   env_file:
     - .env
-  deploy:
-    resources:
-      limits:
-        cpus: '0.5'
-        memory: 1G
-
 
 services:
   redpanda:
-    image: redpandadata/redpanda:v25.3.9
+    image: redpandadata/redpanda:v26.1.2
+    container_name: redpanda
     command:
       - redpanda
       - start
       - --smp
-      - '1'
+      - "2"
+      - --memory
+      - 2G
       - --reserve-memory
       - 0M
       - --overprovisioned
       - --node-id
-      - '1'
+      - "0"
       - --kafka-addr
-      - PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
       - --advertise-kafka-addr
-      - PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - internal://redpanda:9092,external://localhost:19092
       - --pandaproxy-addr
-      - PLAINTEXT://0.0.0.0:28082,OUTSIDE://0.0.0.0:8082
+      - internal://0.0.0.0:8082,external://0.0.0.0:18082
       - --advertise-pandaproxy-addr
-      - PLAINTEXT://redpanda:28082,OUTSIDE://localhost:8082
+      - internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr
+      - internal://0.0.0.0:8081,external://0.0.0.0:18081
       - --rpc-addr
-      - 0.0.0.0:33145
+      - redpanda:33145
       - --advertise-rpc-addr
       - redpanda:33145
     ports:
-      - 8082:8082
-      - 9092:9092
-      - 28082:28082
-      - 29092:29092
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
+      - "9092:9092"
+      - "19092:19092"
+      - "18082:18082"
+      - "18081:18081"
+      - "9644:9644"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health", "--exit-when-healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redpanda-init:
+    image: redpandadata/redpanda:v26.1.2
+    container_name: redpanda-init
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command: >
+      -c "
+      rpk topic create ecommerce_clickstream --brokers redpanda:9092 --partitions 1 --replicas 1;
+      rpk topic create clickstream_dlq --brokers redpanda:9092--partitions 1--replicas 1;
+      "
+    restart: "no"
+
+  console:
+    image: redpandadata/console:v3.7.0
+    container_name: redpanda-console
+    ports:
+      - "8083:8080"
+    volumes:
+      - ./redpanda-console-config.yaml:/tmp/config.yml
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+    depends_on:
+      redpanda:
+        condition: service_healthy
 
   postgres:
     image: postgres:16
@@ -76,12 +106,7 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-      
+     
   jobmanager:
     build:
       context: .
@@ -106,11 +131,6 @@ services:
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
 
   taskmanager:
     image: pyflink-workshop
@@ -136,12 +156,7 @@ services:
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-  
+ 
   airflow-init:
     <<: *airflow-common
     command: version
@@ -187,11 +202,7 @@ services:
       MB_DB_FILE: /metabase-data/metabase.db
       MB_PLUGINS_DIR: /plugins
     restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1.5G
 
 volumes:
   postgres-db-volume:
+  redpanda-data:

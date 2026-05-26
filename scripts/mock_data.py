@@ -1,10 +1,11 @@
-import json
 import uuid
 import random
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from faker import Faker
-from kafka import KafkaProducer
+from confluent_kafka import SerializingProducer
+from confluent_kafka.schema_registry import SchemaRegistryClient
+from confluent_kafka.schema_registry.avro import AvroSerializer
 
 # Initial Faker
 Faker.seed(0)
@@ -125,19 +126,52 @@ class UserSession:
 
         if product:
             payload.update({k: v for k, v in asdict(product).items() if v is not None})
-        
+
+        # Add wrong data into streaming 
+        chaos_chance = random.randint(1, 100)
+        if chaos_chance == 10:
+            payload["user_id"] = None
+
+        elif chaos_chance == 15:
+            payload["cart_total"] = "error"
+           
         return payload
     
 if __name__ == "__main__":
 
     try:
-        server = 'localhost:9092'
-        producer = KafkaProducer(
-            bootstrap_servers=[server],
-            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-            batch_size=32768,
-            linger_ms=100
-        )
+        sr_client = SchemaRegistryClient({'url': 'http://localhost:18081'})
+        schema_str = """
+            {
+            "type": "record",
+            "name": "ClickstreamEvent",
+            "namespace": "com.ecommerce.events",
+            "fields": [
+                {"name": "session_id", "type": ["null", "string"], "default": null},
+                {"name": "client_id", "type": ["null", "string"], "default": null},
+                {"name": "user_id", "type": ["null", "string"], "default": null},
+                {"name": "ip_address", "type": ["null", "string"], "default": null},
+                {"name": "device_category", "type": ["null", "string"], "default": null},
+                {"name": "os_browser", "type": ["null", "string"], "default": null},
+                {"name": "utm_source", "type": ["null", "string"], "default": null},
+                {"name": "cart_total", "type": ["null", "float"], "default": null},
+                {"name": "event_id", "type": "string"},
+                {"name": "event_timestamp", "type": "long"},
+                {"name": "event_name", "type": "string"},
+                {"name": "page_url", "type": ["null", "string"], "default": null},
+                {"name": "product_id", "type": ["null", "string"], "default": null},
+                {"name": "category", "type": ["null", "string"], "default": null},
+                {"name": "price", "type": ["null", "float"], "default": null},
+                {"name": "quantity", "type": ["null", "int"], "default": null},
+                {"name": "transaction_id", "type": ["null", "string"], "default": null}
+            ]
+            }
+        """
+        arvo_serializer = AvroSerializer(sr_client, schema_str)
+        producer = SerializingProducer({
+            'bootstrap.servers': 'localhost:19092',
+            'value.serializer': arvo_serializer
+        })
         TOPIC_NAME = 'ecommerce_clickstream'
 
     except Exception as e:
@@ -156,7 +190,14 @@ if __name__ == "__main__":
             event_data = session.get_next_event()
 
             if event_data:
-                producer.send(topic=TOPIC_NAME, value=event_data)
+                try:
+                    producer.produce(topic=TOPIC_NAME, value=event_data)
+                    producer.poll(0)
+                except Exception as e:
+                    with open("failed_events.log", "a") as f:
+                        f.write(f"Failed to produce: {event_data} | Error: {str(e)}\n")
+                    print(f"Error data! Write into failed_eveents.log, pipeline continue run")
+
                 count += 1
 
                 time_str = datetime.fromtimestamp(event_data['event_timestamp'] / 1000.0).strftime('%H:%M:%S')
