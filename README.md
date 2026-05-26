@@ -131,14 +131,7 @@ DuckDB's `read_parquet('s3://...', hive_partitioning=true)` capability allows th
 User profiles and product catalogs are tracked over time using dbt's `snapshot` with `strategy = 'check'`. Each time a user's `device_category`, `os_browser`, or `utm_source` changes, a new version is created with `dbt_valid_from` / `dbt_valid_to` timestamps. `mart_conversion_funnel` correctly filters `WHERE dbt_valid_to IS NULL` to use only current records.
 
 ### 6. Remote Terraform State on S3
-Instead of committing `terraform.tfstate` to Git (a security risk), the project uses an S3 backend:
-```hcl
-backend "s3" {
-  bucket = "minh-terraform-state-bucket-2026"
-  key    = "prod/clickstream/terraform.tfstate"
-  region = "ap-southeast-1"
-}
-```
+Instead of committing `terraform.tfstate` to Git (a security risk), the project uses an S3 backend
 This prevents credentials from leaking and enables team collaboration on infrastructure.
 
 ---
@@ -183,7 +176,8 @@ e_commerce_clickstream/
 │
 ├── src/
 │   └── job/
-│       └── store_data_s3.py           # PyFlink job: Avro source, 3-sink STATEMENT SET
+│       ├── store_data_s3.py           # PyFlink job: Avro source, 3-sink STATEMENT SET, S3-backed checkpoints
+│       └── savepoints.sh              # Helper script: trigger savepoint → safe job upgrade
 │
 ├── tests/
 │   └── test_mock_data.py              # pytest: 6 unit tests for state machine logic
@@ -455,21 +449,9 @@ Tests enforced:
 | **Terraform state in Git** | Migrated to S3 remote backend — state now stored in `minh-terraform-state-bucket-2026` |
 | **PyFlink JVM metaspace OOM** | Added `taskmanager.memory.jvm-metaspace.size: 512m` in `flink-config.yaml` |
 | **SCD Type 2 stale join** | Added `WHERE dbt_valid_to IS NULL` in `mart_conversion_funnel` CTE |
-
----
-
-## 🔁 Pipeline Recovery & Resilience
-
-This section tracks planned improvements to make the pipeline more resilient to failures and restarts. Items are prioritized based on production impact.
-
-| # | Improvement | Problem Solved | Status | Files |
-|---|-------------|---------------|--------|-------|
-| 1 | **Flink Externalized Checkpoints** | Checkpoints are stored in-memory only — lost on container restart. Adding `execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION` persists checkpoints to disk/S3 so the job can resume from the last committed offset instead of re-reading from `earliest-offset`. | ⬜ Pending | `flink-config.yaml` |
-| 2 | **Flink Savepoint for Code Upgrades** | Restarting the Flink job with a new version discards all in-flight state. A savepoint script (`flink_savepoint.sh`) allows graceful job suspension, state snapshot, and resumption from the exact same position with new code. | ⬜ Pending | `scripts/flink_savepoint.sh`, `docker-compose.yml` |
-| 3 | **Mock Data Offset Tracking** | `mock_data.py` has no persistent state — a crash loses progress and risks duplicate or missing events on restart. Persisting `last_event_timestamp` and `events_sent_count` to a JSON checkpoint file enables clean resumption. | ⬜ Pending | `scripts/mock_data.py` |
-| 4 | **Airflow Email Alerting on Failure** | DAG failures are silent — no notification until someone manually checks the UI. Adding SMTP config and `on_failure_callback` ensures the team is alerted immediately when a dbt run fails after retries. | ⬜ Pending | `docker-compose.yml`, `dags/dbt_pipeline.py` |
-
-> **Legend:** ✅ Done &nbsp;|&nbsp; 🔄 In Progress &nbsp;|&nbsp; ⬜ Pending
+| **In-memory checkpoints lost on restart** | Learned the difference between checkpoint (auto, periodic) vs savepoint (manual, on-demand). Migrated both to S3-backed storage with `RETAIN_ON_CANCELLATION` — job now resumes from last committed offset instead of replaying the full topic |
+| **Unsafe Flink code upgrades** | Implemented `savepoints.sh` to snapshot job state before deploying new code, then resume with `-s <savepoint-path>` — zero data loss on upgrade |
+| **Silent DAG failures** | Added `email_on_failure=True` + SMTP config via env variables — team gets notified immediately after 1 failed retry |
 
 ---
 
