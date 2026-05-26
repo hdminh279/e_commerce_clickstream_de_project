@@ -33,6 +33,7 @@ parallelism:
   default: 1
 rest:
   address: 0.0.0.0
+
 env:
   java:
     opts:

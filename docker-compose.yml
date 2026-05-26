@@ -74,7 +74,7 @@ services:
     command: >
       -c "
       rpk topic create ecommerce_clickstream --brokers redpanda:9092 --partitions 1 --replicas 1;
-      rpk topic create clickstream_dlq --brokers redpanda:9092--partitions 1--replicas 1;
+      rpk topic create clickstream_dlq --brokers redpanda:9092 --partitions 1 --replicas 1;
       "
     restart: "no"
 
@@ -131,6 +131,11 @@ services:
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
+        state.backend: hashmap
+        state.checkpoint-storage: filesystem
+        state.checkpoints.dir: s3a://${TARGET_S3_BUCKET}/flink-checkpoints/
+        state.savepoints.dir: s3a://${TARGET_S3_BUCKET}/flink-savepoints/
+        execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
 
   taskmanager:
     image: pyflink-workshop
@@ -156,6 +161,11 @@ services:
         s3.access-key: ${AWS_ACCESS_KEY_ID}
         s3.secret-key: ${AWS_SECRET_ACCESS_KEY}
         s3.endpoint: s3.amazonaws.com
+        state.backend: hashmap
+        state.checkpoint-storage: filesystem
+        state.checkpoints.dir: s3a://${TARGET_S3_BUCKET}/flink-checkpoints/
+        state.savepoints.dir: s3a://${TARGET_S3_BUCKET}/flink-savepoints/
+        execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
  
   airflow-init:
     <<: *airflow-common

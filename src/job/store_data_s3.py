@@ -1,5 +1,6 @@
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.table import EnvironmentSettings, StreamTableEnvironment
+from pyflink.common import Configuration
 import os
 
 TARGET_BUCKET = os.getenv("TARGET_S3_BUCKET")
@@ -72,7 +73,7 @@ def create_kafka_dlq_sink(t_env):
             'format' = 'parquet',
             'sink.rolling-policy.rollover-interval' = '1 min',
             'sink.rolling-policy.check-interval' = '1 min',
-            'sink.rolling-policy.file-size' = '128MB'
+            'sink.rolling-policy.file-size' = '1MB'
         )
     """
     t_env.execute_sql(sink_ddl)
@@ -108,7 +109,7 @@ def create_s3_parquet_sink(t_env):
             'format' = 'parquet',
             'sink.rolling-policy.rollover-interval' = '1 min',
             'sink.rolling-policy.check-interval' = '1 min',
-            'sink.rolling-policy.file-size' = '128MB'
+            'sink.rolling-policy.file-size' = '1MB'
             )
         """
     t_env.execute_sql(source_ddl)
@@ -131,7 +132,7 @@ def create_s3_revenue_sink(t_env):
             'format' = 'parquet',
             'sink.rolling-policy.rollover-interval' = '1 min',
             'sink.rolling-policy.check-interval' = '1 min',
-            'sink.rolling-policy.file-size' = '128MB'
+            'sink.rolling-policy.file-size' = '1MB'
         )
 
     """
@@ -140,7 +141,24 @@ def create_s3_revenue_sink(t_env):
     return sink_revenue
 
 def log_upload_s3():
-    env = StreamExecutionEnvironment.get_execution_environment()
+    # Config checkpoint
+    config = Configuration()
+    config.set_string("state.backend", "hashmap")
+    config.set_string("state.checkpoint-storage", "filesystem")
+    config.set_string(
+        "state.checkpoints.dir",
+        f"s3a://{TARGET_BUCKET}/flink-checkpoints/",
+    )
+    config.set_string(
+        "state.savepoints.dir",
+        f"s3a://{TARGET_BUCKET}/flink-savepoints/",
+    )
+    config.set_string(
+        "execution.checkpointing.externalized-checkpoint-retention",
+        "RETAIN_ON_CANCELLATION"
+    )
+
+    env = StreamExecutionEnvironment.get_execution_environment(config)
     env.enable_checkpointing(10 * 1000)
     flink_parallesim = int(os.environ.get("FLINK_PARALLELISM", 1))
     env.set_parallelism(flink_parallesim)

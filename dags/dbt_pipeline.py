@@ -1,13 +1,18 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
+import os
 
 with DAG(
-    dag_id = "dbt_clickstream",
-
+    dag_id="flight_delay_pipeline",
+    
     default_args = {
+        "owner": "minh",
         "retries": 1,
-        "retry_delay": timedelta(minutes=5)
+        "retry_delay": timedelta(minutes=1),
+        "email_on_failure": True,
+        "email_on_retry": False,
+        "email": [os.environ.get('ALERT_EMAIL', 'your_email@example.com')]
     },
 
     description="dbt Pipeline",

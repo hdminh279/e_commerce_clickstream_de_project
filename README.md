@@ -458,7 +458,23 @@ Tests enforced:
 
 ---
 
+## 🔁 Pipeline Recovery & Resilience
+
+This section tracks planned improvements to make the pipeline more resilient to failures and restarts. Items are prioritized based on production impact.
+
+| # | Improvement | Problem Solved | Status | Files |
+|---|-------------|---------------|--------|-------|
+| 1 | **Flink Externalized Checkpoints** | Checkpoints are stored in-memory only — lost on container restart. Adding `execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION` persists checkpoints to disk/S3 so the job can resume from the last committed offset instead of re-reading from `earliest-offset`. | ⬜ Pending | `flink-config.yaml` |
+| 2 | **Flink Savepoint for Code Upgrades** | Restarting the Flink job with a new version discards all in-flight state. A savepoint script (`flink_savepoint.sh`) allows graceful job suspension, state snapshot, and resumption from the exact same position with new code. | ⬜ Pending | `scripts/flink_savepoint.sh`, `docker-compose.yml` |
+| 3 | **Mock Data Offset Tracking** | `mock_data.py` has no persistent state — a crash loses progress and risks duplicate or missing events on restart. Persisting `last_event_timestamp` and `events_sent_count` to a JSON checkpoint file enables clean resumption. | ⬜ Pending | `scripts/mock_data.py` |
+| 4 | **Airflow Email Alerting on Failure** | DAG failures are silent — no notification until someone manually checks the UI. Adding SMTP config and `on_failure_callback` ensures the team is alerted immediately when a dbt run fails after retries. | ⬜ Pending | `docker-compose.yml`, `dags/dbt_pipeline.py` |
+
+> **Legend:** ✅ Done &nbsp;|&nbsp; 🔄 In Progress &nbsp;|&nbsp; ⬜ Pending
+
+---
+
 ## 📦 Dependencies
+
 
 Key dependencies managed via `uv` (see `pyproject.toml`):
 
