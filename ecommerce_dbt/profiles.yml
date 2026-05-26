@@ -1,5 +1,5 @@
 ecommerce_dbt:
-  target:  prod
+  target:  dev
   outputs:
     
     dev:
