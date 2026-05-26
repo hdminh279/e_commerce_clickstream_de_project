@@ -1,8 +1,6 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
-from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig
-import os
 
 with DAG(
     dag_id = "dbt_clickstream",

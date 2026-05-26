@@ -196,7 +196,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     with open("failed_events.log", "a") as f:
                         f.write(f"Failed to produce: {event_data} | Error: {str(e)}\n")
-                    print(f"Error data! Write into failed_eveents.log, pipeline continue run")
+                    print("Error data! Write into failed_eveents.log, pipeline continue run")
 
                 count += 1
 
