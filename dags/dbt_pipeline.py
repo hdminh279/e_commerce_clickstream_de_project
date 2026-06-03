@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import os
 
 with DAG(
-    dag_id="flight_delay_pipeline",
+    dag_id="ecommerce_clickstream_pipeline",
     
     default_args = {
         "owner": "minh",
