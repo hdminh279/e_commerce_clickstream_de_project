@@ -58,11 +58,11 @@ services:
     volumes:
       - redpanda-data:/var/lib/redpanda/data
     healthcheck:
-      test: ["CMD", "rpk", "cluster", "health", "--exit-when-healthy"]
+      test: ["CMD-SHELL", "rpk cluster health --exit-when-healthy && curl -sf http://localhost:8081/subjects"]
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   redpanda-init:
     image: redpandadata/redpanda:v26.1.2

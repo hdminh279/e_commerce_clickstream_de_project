@@ -196,7 +196,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     with open("failed_events.log", "a") as f:
                         f.write(f"Failed to produce: {event_data} | Error: {str(e)}\n")
-                    print("Error data! Write into failed_eveents.log, pipeline continue run")
+                    print("Error data! Write into failed_events.log, pipeline continue run")
 
                 count += 1
 
@@ -218,3 +218,22 @@ if __name__ == "__main__":
         if 'producer' in locals() and producer:
             producer.flush()
             producer.close()
+
+# =============================================================================
+# TROUBLESHOOTING
+# =============================================================================
+# [1] Schema Registry error 40002 → _schemas topic corrupted.
+#     Fix: docker compose down
+#          docker volume rm e_commerce_clickstream_redpanda-data
+#          docker compose up -d redpanda redpanda-init && sleep 30
+#          curl http://localhost:18081/subjects  # expect []
+#
+# [2] Use "docker compose stop" (not "down") to pause without losing volume state.
+#
+# [3] ChunkLoadError on localhost:8083/schema-registry → UI bug in Redpanda Console
+#     v3.7.0. The Schema Registry API at localhost:18081 still works fine.
+#
+# [4] Chaos injection (lines 131-136) is intentional — null events are valid Avro
+#     and routed to DLQ by Flink. Not a producer error.
+# =============================================================================
+
