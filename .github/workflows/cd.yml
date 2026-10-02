@@ -1,8 +1,17 @@
 name: E-commerce CD Pipeline
 
 on:
-  push:
-    branches: ["main"]
+  # Allow manual deployment trigger from GitHub Actions UI
+  workflow_dispatch:
+  # Push deployment is disabled to prevent failures after AWS trial expiration.
+  # Uncomment below if active AWS infrastructure is provisioned:
+  # push:
+  #   branches: ["main"]
+  #   paths-ignore:
+  #     - 'README.md'
+  #     - 'docs/**'
+  #     - '.gitignore'
+  #     - 'metabase-data/**'
 
 jobs:
   deploy-to-production:
@@ -40,4 +49,3 @@ jobs:
         run: |
           terraform init
           terraform apply -auto-approve
-
